@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Einstein Chat — PROTOCOL REDLINE</title>
+<style>
+  :root {
+    --bg: #0E0303;
+    --panel: #1A0606;
+    --primary: #FF1A1A;
+    --primary-glow: #FF4D4D;
+    --border: #5C0E0E;
+    --text: #F5C9C9;
+    --muted: #8A5454;
+    --success: #22C55E;
+    --secondary: #FF8A1A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%;
+    background: transparent;
+    color: var(--text);
+    font-family: 'JetBrains Mono', 'Courier New', ui-monospace, monospace;
+    overflow: hidden;
+  }
+  .panel {
+    width: 100%; height: 100%;
+    background: linear-gradient(180deg, rgba(26,6,6,.95), rgba(14,3,3,.95));
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(255,26,26,.3);
+    padding: 14px;
+    display: flex;
+    gap: 14px;
+    backdrop-filter: blur(8px);
+  }
+  /* AVATAR */
+  .avatar-wrap {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    flex-shrink: 0;
+  }
+  .avatar {
+    position: relative;
+    width: 110px; height: 110px;
+  }
+  .avatar .ring {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(255,26,26,.4);
+    animation: spin 8s linear infinite;
+  }
+  .avatar .ring.r2 {
+    inset: -6px; border-width: 1px;
+    border-color: rgba(255,26,26,.3);
+    animation: spin 12s linear infinite reverse;
+  }
+  .avatar .core {
+    position: absolute; inset: 8px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #2a0808 0%, #0a0202 70%);
+    border: 1px solid rgba(255,26,26,.5);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    box-shadow: inset 0 0 20px rgba(255,26,26,.4), 0 0 24px rgba(255,26,26,.5);
+  }
+  .avatar .core::before {
+    content: 'E';
+    font-size: 48px; font-weight: 700;
+    color: var(--primary);
+    text-shadow: 0 0 12px var(--primary-glow);
+    font-family: 'Georgia', serif;
+    font-style: italic;
+  }
+  .avatar.speaking .pulse {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(255,77,77,.6);
+    animation: spread 1.2s ease-out infinite;
+  }
+  .equalizer {
+    display: none;
+    gap: 3px; height: 14px; align-items: end;
+  }
+  .avatar.speaking ~ .label .equalizer { display: flex; }
+  .equalizer span {
+    width: 3px; background: var(--primary); border-radius: 2px;
+    animation: eq 0.8s ease-in-out infinite;
+  }
+  .equalizer span:nth-child(2){ animation-delay: .1s; }
+  .equalizer span:nth-child(3){ animation-delay: .2s; }
+  .equalizer span:nth-child(4){ animation-delay: .3s; }
+  .equalizer span:nth-child(5){ animation-delay: .4s; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes spread {
+    0% { transform: scale(1); opacity: .8; }
+    100% { transform: scale(1.4); opacity: 0; }
+  }
+  @keyframes eq {
+    0%, 100% { height: 20%; }
+    50% { height: 100%; }
+  }
+  .label {
+    text-align: center;
+  }
+  .label .name {
+    color: var(--primary);
+    font-weight: 700;
+    letter-spacing: .2em;
+    font-size: 12px;
+    text-shadow: 0 0 8px var(--primary-glow);
+  }
+  .label .ver {
+    font-size: 9px; color: var(--muted);
+  }
+
+  /* CHAT */
+  .chat {
+    flex: 1; display: flex; flex-direction: column; min-width: 0;
+  }
+  .status {
+    display: flex; justify-content: space-between;
+    font-size: 10px; text-transform: uppercase; letter-spacing: .15em;
+    margin-bottom: 8px;
+  }
+  .status .live {
+    color: var(--success);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .status .live::before {
+    content: ''; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--success);
+    animation: blink 1.5s ease-in-out infinite;
+  }
+  .status .stage { color: var(--primary); }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+
+  .messages {
+    flex: 1; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 6px;
+    padding-right: 6px;
+    min-height: 80px;
+    max-height: 100%;
+  }
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .msg {
+    max-width: 85%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    animation: fadeIn .3s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .msg.einstein {
+    align-self: flex-start;
+    background: rgba(255,26,26,.12);
+    border: 1px solid rgba(255,26,26,.4);
+    border-top-left-radius: 2px;
+    color: var(--text);
+  }
+  .msg.player {
+    align-self: flex-end;
+    background: rgba(255,138,26,.15);
+    border: 1px solid rgba(255,138,26,.4);
+    border-top-right-radius: 2px;
+    color: #FFD9AC;
+  }
+  .msg.typing::after {
+    content: '▋';
+    color: var(--primary);
+    animation: blink .8s step-end infinite;
+    margin-left: 2px;
+  }
+
+  .quick-replies {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+  }
+  .qr-btn {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,26,26,.4);
+    background: rgba(255,26,26,.1);
+    color: var(--primary);
+    cursor: pointer;
+    transition: all .2s;
+    font-family: inherit;
+  }
+  .qr-btn:hover {
+    background: rgba(255,26,26,.25);
+    border-color: var(--primary);
+    box-shadow: 0 0 12px rgba(255,26,26,.4);
+  }
+
+  .input-row {
+    display: flex; gap: 6px; margin-top: 10px;
+  }
+  .input-row input {
+    flex: 1;
+    background: rgba(0,0,0,.4);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12px;
+    outline: none;
+  }
+  .input-row input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 1px var(--primary);
+  }
+  .input-row button {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: .1em;
+  }
+  .input-row button:hover { background: var(--primary-glow); box-shadow: 0 0 14px rgba(255,26,26,.5); }
+</style>
+</head>
+<body>
+  <section class="panel" aria-label="Einstein AI 대화창">
+    <div class="avatar-wrap">
+      <div class="avatar" id="avatar">
+        <div class="ring"></div>
+        <div class="ring r2"></div>
+        <div class="pulse"></div>
+        <div class="core"></div>
+      </div>
+      <div class="label">
+        <div class="name">EINSTEIN</div>
+        <div class="ver">v2.4.1</div>
+        <div class="equalizer">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat">
+      <div class="status">
+        <span class="live">ACTIVE — 실시간 분석 중</span>
+        <span class="stage" id="stageLabel">STAGE 1 / 침투 경로 분석</span>
+      </div>
+      <div class="messages" id="messages"></div>
+      <div class="quick-replies" id="quickReplies"></div>
+      <form class="input-row" id="form">
+        <input id="input" placeholder="질문 입력 또는 위 선택..." autocomplete="off" />
+        <button type="submit">전송</button>
+      </form>
+    </div>
+  </section>
+
+<script>
+(function(){
+  const TYPE_SPEED = 18;
+  const messagesEl = document.getElementById('messages');
+  const quickEl = document.getElementById('quickReplies');
+  const avatarEl = document.getElementById('avatar');
+  const stageLabelEl = document.getElementById('stageLabel');
+  const form = document.getElementById('form');
+  const input = document.getElementById('input');
+
+  // ============ DEFAULT SCRIPT (Stage 1) ============
+  // Override via postMessage({type:'init', stageLabel, messages, quickReplies})
+  let messages = [
+    { role: 'einstein', text: '경고: SOC 시스템 침투가 감지되었습니다. 60분 내 코드 복원 필요.' },
+    { role: 'einstein', text: '먼저 침투 경로를 분석합시다. 좌측 네트워크 토폴로지에서 감염된 노드를 확인하세요.' }
+  ];
+  let quickReplies = [
+    { label: '경로 추적 시작', value: 'TRACE_ROUTE' },
+    { label: '의심 IP 보기', value: 'SHOW_SUSPECT_IPS' },
+    { label: '힌트 요청', value: 'HINT' }
+  ];
+
+  // ============ RENDERING ============
+  function renderMessages() {
+    messagesEl.innerHTML = '';
+    messages.forEach((m, i) => {
+      const div = document.createElement('div');
+      div.className = 'msg ' + m.role;
+      div.dataset.idx = i;
+      div.textContent = m.role === 'einstein' && i === messages.length - 1 && !m.typed
+        ? '' : m.text;
+      messagesEl.appendChild(div);
+    });
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    typeLastEinstein();
+  }
+
+  function renderQuickReplies() {
+    quickEl.innerHTML = '';
+    quickReplies.forEach(q => {
+      const b = document.createElement('button');
+      b.className = 'qr-btn';
+      b.textContent = q.label;
+      b.type = 'button';
+      b.addEventListener('click', () => handlePlayerInput(q.value || q.label));
+      quickEl.appendChild(b);
+    });
+  }
+
+  function typeLastEinstein() {
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== 'einstein' || last.typed) return;
+    const el = messagesEl.querySelector(`.msg[data-idx="${messages.length-1}"]`);
+    if (!el) return;
+    el.classList.add('typing');
+    avatarEl.classList.add('speaking');
+    let i = 0;
+    const timer = setInterval(() => {
+      i++;
+      el.textContent = last.text.slice(0, i);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      if (i >= last.text.length) {
+        clearInterval(timer);
+        el.classList.remove('typing');
+        avatarEl.classList.remove('speaking');
+        last.typed = true;
+      }
+    }, TYPE_SPEED);
+  }
+
+  function addMessage(role, text) {
+    messages.push({ role, text, typed: role !== 'einstein' });
+    renderMessages();
+  }
+
+  // ============ INPUT HANDLER ============
+  function handlePlayerInput(text) {
+    if (!text || !text.trim()) return;
+    addMessage('player', text);
+    // Notify parent (Tableau JS API host)
+    postToParent({ type: 'player_input', text: text, stage: stageLabelEl.textContent });
+    // Optional default echo
+    setTimeout(() => {
+      addMessage('einstein', '입력 수신: "' + text + '" — 분석 중...');
+    }, 600);
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const v = input.value.trim();
+    if (!v) return;
+    handlePlayerInput(v);
+    input.value = '';
+  });
+
+  // ============ POSTMESSAGE BRIDGE ============
+  function postToParent(payload) {
+    try { window.parent.postMessage(payload, '*'); } catch (e) {}
+  }
+  window.addEventListener('message', (e) => {
+    const d = e.data || {};
+    if (d.type === 'init') {
+      if (d.stageLabel) stageLabelEl.textContent = d.stageLabel;
+      if (Array.isArray(d.messages)) messages = d.messages.map(m => ({...m, typed: false}));
+      if (Array.isArray(d.quickReplies)) quickReplies = d.quickReplies;
+      renderMessages(); renderQuickReplies();
+    } else if (d.type === 'einstein_say' && d.text) {
+      addMessage('einstein', d.text);
+    } else if (d.type === 'set_stage' && d.stageLabel) {
+      stageLabelEl.textContent = d.stageLabel;
+    } else if (d.type === 'set_quick_replies' && Array.isArray(d.quickReplies)) {
+      quickReplies = d.quickReplies; renderQuickReplies();
+    }
+  });
+
+  // Init
+  renderMessages();
+  renderQuickReplies();
+  postToParent({ type: 'ready', component: 'einstein-chat' });
+})();
+</script>
+</body>
+</html>
