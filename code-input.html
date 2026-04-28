@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Code Input — PROTOCOL REDLINE</title>
+<style>
+  :root {
+    --bg: #0E0303;
+    --panel: #1A0606;
+    --primary: #FF1A1A;
+    --primary-glow: #FF4D4D;
+    --border: #5C0E0E;
+    --text: #F5C9C9;
+    --muted: #8A5454;
+    --success: #22C55E;
+    --danger: #FF0000;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%;
+    background: transparent;
+    color: var(--text);
+    font-family: 'JetBrains Mono', 'Courier New', ui-monospace, monospace;
+    overflow: hidden;
+  }
+  .panel {
+    width: 100%; height: 100%;
+    background: linear-gradient(180deg, rgba(26,6,6,.95), rgba(14,3,3,.95));
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(255,26,26,.3);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; text-transform: uppercase; letter-spacing: .2em;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+  .header .title {
+    color: var(--primary);
+    font-weight: 700;
+    text-shadow: 0 0 8px var(--primary-glow);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .header .title::before {
+    content: '⚠'; font-size: 16px;
+  }
+  .header .timer {
+    color: var(--danger);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: .15em;
+  }
+  .timer.warn { animation: pulseRed 0.8s ease-in-out infinite; }
+  @keyframes pulseRed {
+    0%,100% { color: var(--danger); text-shadow: 0 0 8px var(--danger); }
+    50% { color: #fff; text-shadow: 0 0 16px var(--danger); }
+  }
+
+  .prompt {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+  .prompt b { color: var(--primary); }
+
+  .terminal {
+    flex: 1;
+    background: rgba(0,0,0,.6);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+  .term-line {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .term-line .prefix {
+    color: var(--success);
+    margin-right: 6px;
+  }
+
+  .digit-row {
+    display: flex; gap: 8px; justify-content: center;
+    margin: 8px 0;
+  }
+  .digit {
+    width: 44px; height: 56px;
+    background: rgba(0,0,0,.7);
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary);
+    font-family: inherit;
+    text-shadow: 0 0 8px var(--primary-glow);
+    outline: none;
+    transition: all .2s;
+    caret-color: var(--primary);
+  }
+  .digit:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(255,26,26,.3), 0 0 20px rgba(255,26,26,.5);
+    transform: translateY(-2px);
+  }
+  .digit.filled { background: rgba(255,26,26,.15); }
+  .digit.error { border-color: var(--danger); animation: shake .4s; }
+  .digit.success { border-color: var(--success); color: var(--success); text-shadow: 0 0 8px var(--success); }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  .feedback {
+    text-align: center;
+    font-size: 12px;
+    min-height: 18px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .feedback.error { color: var(--danger); }
+  .feedback.success { color: var(--success); text-shadow: 0 0 8px var(--success); }
+  .feedback.info { color: var(--muted); }
+
+  .actions {
+    display: flex; gap: 8px; justify-content: center;
+  }
+  .btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: all .2s;
+  }
+  .btn.primary {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+  .btn.primary:hover {
+    background: var(--primary-glow);
+    box-shadow: 0 0 16px rgba(255,26,26,.6);
+  }
+  .btn.ghost {
+    background: transparent;
+    color: var(--muted);
+  }
+  .btn.ghost:hover { color: var(--primary); border-color: var(--primary); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .attempts {
+    display: flex; justify-content: space-between;
+    font-size: 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .15em;
+  }
+  .attempts .left { color: var(--danger); font-weight: 700; }
+</style>
+</head>
+<body>
+  <section class="panel">
+    <div class="header">
+      <div class="title">CODE INPUT — STAGE <span id="stageNum">1</span></div>
+      <div class="timer" id="timer">59:42</div>
+    </div>
+
+    <div class="prompt" id="prompt">
+      분석 결과를 기반으로 <b>4자리 보안 코드</b>를 입력하세요. 시간 내 입력 실패 시 시스템이 영구 잠금됩니다.
+    </div>
+
+    <div class="terminal">
+      <div class="term-line"><span class="prefix">root@einstein:~$</span> ./decrypt --stage <span id="termStage">1</span> --input</div>
+      <div class="term-line"><span class="prefix">&gt;</span> 4자리 코드 입력 대기중...</div>
+
+      <div class="digit-row" id="digits">
+        <input class="digit" maxlength="1" inputmode="numeric" data-i="0" />
+        <input class="digit" maxlength="1" inputmode="numeric" data-i="1" />
+        <input class="digit" maxlength="1" inputmode="numeric" data-i="2" />
+        <input class="digit" maxlength="1" inputmode="numeric" data-i="3" />
+      </div>
+
+      <div class="feedback info" id="feedback">대기 중</div>
+    </div>
+
+    <div class="attempts">
+      <span>시도 횟수: <span id="attempts">0</span> / <span id="maxAttempts">5</span></span>
+      <span class="left">남은 시도: <span id="remaining">5</span></span>
+    </div>
+
+    <div class="actions">
+      <button class="btn ghost" type="button" id="clearBtn">초기화</button>
+      <button class="btn primary" type="button" id="submitBtn">코드 검증</button>
+    </div>
+  </section>
+
+<script>
+(function(){
+  // ============ CONFIG (override via postMessage init) ============
+  let CONFIG = {
+    stage: 1,
+    correctCode: '7392',     // override per stage from parent
+    maxAttempts: 5,
+    timerSeconds: 60 * 60,   // 60 minutes
+    allowAlpha: false        // numeric only by default
+  };
+
+  const digits = Array.from(document.querySelectorAll('.digit'));
+  const feedback = document.getElementById('feedback');
+  const submitBtn = document.getElementById('submitBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const attemptsEl = document.getElementById('attempts');
+  const remainingEl = document.getElementById('remaining');
+  const maxEl = document.getElementById('maxAttempts');
+  const timerEl = document.getElementById('timer');
+  const stageNumEl = document.getElementById('stageNum');
+  const termStageEl = document.getElementById('termStage');
+
+  let attempts = 0;
+  let locked = false;
+  let timerHandle = null;
+  let secondsLeft = CONFIG.timerSeconds;
+
+  function applyConfig() {
+    stageNumEl.textContent = CONFIG.stage;
+    termStageEl.textContent = CONFIG.stage;
+    maxEl.textContent = CONFIG.maxAttempts;
+    remainingEl.textContent = CONFIG.maxAttempts - attempts;
+    secondsLeft = CONFIG.timerSeconds;
+    digits.forEach(d => {
+      if (CONFIG.allowAlpha) {
+        d.removeAttribute('inputmode');
+      } else {
+        d.setAttribute('inputmode', 'numeric');
+      }
+    });
+  }
+
+  // ============ DIGIT INPUT ============
+  digits.forEach((d, i) => {
+    d.addEventListener('input', (e) => {
+      let v = e.target.value;
+      if (!CONFIG.allowAlpha) v = v.replace(/[^0-9]/g, '');
+      else v = v.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+      e.target.value = v.slice(0, 1);
+      if (v) {
+        e.target.classList.add('filled');
+        if (i < digits.length - 1) digits[i+1].focus();
+      } else {
+        e.target.classList.remove('filled');
+      }
+    });
+    d.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !e.target.value && i > 0) {
+        digits[i-1].focus();
+        digits[i-1].value = '';
+        digits[i-1].classList.remove('filled');
+      } else if (e.key === 'Enter') {
+        submit();
+      }
+    });
+    d.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const txt = (e.clipboardData.getData('text') || '').slice(0, 4);
+      [...txt].forEach((c, k) => {
+        if (digits[k]) {
+          digits[k].value = CONFIG.allowAlpha ? c.toUpperCase() : c.replace(/[^0-9]/g,'');
+          if (digits[k].value) digits[k].classList.add('filled');
+        }
+      });
+      const next = Math.min(txt.length, digits.length - 1);
+      digits[next] && digits[next].focus();
+    });
+  });
+
+  // ============ TIMER ============
+  function fmt(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+  }
+  function startTimer() {
+    if (timerHandle) clearInterval(timerHandle);
+    timerHandle = setInterval(() => {
+      secondsLeft--;
+      timerEl.textContent = fmt(Math.max(0, secondsLeft));
+      if (secondsLeft <= 60) timerEl.classList.add('warn');
+      if (secondsLeft <= 0) {
+        clearInterval(timerHandle);
+        lockout('TIMEOUT');
+      }
+    }, 1000);
+  }
+
+  // ============ SUBMIT ============
+  function getCode() {
+    return digits.map(d => d.value).join('');
+  }
+  function setStatus(state, msg) {
+    feedback.className = 'feedback ' + state;
+    feedback.textContent = msg;
+  }
+  function flashError() {
+    digits.forEach(d => d.classList.add('error'));
+    setTimeout(() => digits.forEach(d => d.classList.remove('error')), 500);
+  }
+  function flashSuccess() {
+    digits.forEach(d => d.classList.add('success'));
+  }
+
+  function submit() {
+    if (locked) return;
+    const code = getCode();
+    if (code.length < 4) {
+      setStatus('error', '4자리를 모두 입력하세요');
+      flashError();
+      return;
+    }
+    attempts++;
+    attemptsEl.textContent = attempts;
+    remainingEl.textContent = Math.max(0, CONFIG.maxAttempts - attempts);
+
+    const ok = String(code).toUpperCase() === String(CONFIG.correctCode).toUpperCase();
+    if (ok) {
+      setStatus('success', '✓ 코드 검증 성공 — 다음 단계로 이동합니다');
+      flashSuccess();
+      locked = true;
+      clearInterval(timerHandle);
+      postToParent({
+        type: 'code_submit',
+        stage: CONFIG.stage,
+        code: code,
+        success: true,
+        attempts: attempts
+      });
+    } else {
+      setStatus('error', '✗ 코드 불일치 — 다시 시도하세요');
+      flashError();
+      postToParent({
+        type: 'code_submit',
+        stage: CONFIG.stage,
+        code: code,
+        success: false,
+        attempts: attempts
+      });
+      if (attempts >= CONFIG.maxAttempts) {
+        lockout('MAX_ATTEMPTS');
+      }
+    }
+  }
+
+  function lockout(reason) {
+    locked = true;
+    submitBtn.disabled = true;
+    clearBtn.disabled = true;
+    digits.forEach(d => d.disabled = true);
+    setStatus('error', reason === 'TIMEOUT' ? '⏱ 시간 초과 — 시스템 잠금' : '🔒 시도 초과 — 시스템 잠금');
+    postToParent({ type: 'lockout', reason: reason, stage: CONFIG.stage });
+  }
+
+  function clearAll() {
+    if (locked) return;
+    digits.forEach(d => { d.value = ''; d.classList.remove('filled','error','success'); });
+    digits[0].focus();
+    setStatus('info', '입력 초기화됨');
+  }
+
+  submitBtn.addEventListener('click', submit);
+  clearBtn.addEventListener('click', clearAll);
+
+  // ============ POSTMESSAGE BRIDGE ============
+  function postToParent(payload) {
+    try { window.parent.postMessage(payload, '*'); } catch(e) {}
+  }
+  window.addEventListener('message', (e) => {
+    const d = e.data || {};
+    if (d.type === 'init') {
+      CONFIG = Object.assign(CONFIG, d.config || {});
+      applyConfig();
+      if (d.startTimer !== false) startTimer();
+    } else if (d.type === 'set_correct_code' && d.code) {
+      CONFIG.correctCode = d.code;
+    } else if (d.type === 'reset') {
+      attempts = 0; locked = false;
+      submitBtn.disabled = false; clearBtn.disabled = false;
+      digits.forEach(d => d.disabled = false);
+      clearAll();
+      attemptsEl.textContent = 0;
+      remainingEl.textContent = CONFIG.maxAttempts;
+      timerEl.classList.remove('warn');
+      applyConfig();
+      startTimer();
+    } else if (d.type === 'pause_timer') {
+      clearInterval(timerHandle);
+    } else if (d.type === 'resume_timer') {
+      startTimer();
+    }
+  });
+
+  // Init
+  applyConfig();
+  startTimer();
+  digits[0].focus();
+  postToParent({ type: 'ready', component: 'code-input' });
+})();
+</script>
+</body>
+</html>
