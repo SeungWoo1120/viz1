@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Final Restore — PROTOCOL REDLINE</title>
+<style>
+  :root {
+    --bg: #0E0303;
+    --panel: #1A0606;
+    --primary: #FF1A1A;
+    --primary-glow: #FF4D4D;
+    --border: #5C0E0E;
+    --text: #F5C9C9;
+    --muted: #8A5454;
+    --success: #22C55E;
+    --danger: #FF0000;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%;
+    background: transparent;
+    color: var(--text);
+    font-family: 'JetBrains Mono', 'Courier New', ui-monospace, monospace;
+    overflow: hidden;
+  }
+  .panel {
+    width: 100%; height: 100%;
+    background:
+      radial-gradient(ellipse at top, rgba(255,26,26,.15), transparent 60%),
+      linear-gradient(180deg, rgba(26,6,6,.95), rgba(14,3,3,.98));
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 0 30px rgba(255,26,26,.4), inset 0 0 40px rgba(255,0,0,.08);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; text-transform: uppercase; letter-spacing: .2em;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+  }
+  .header .title {
+    color: var(--primary);
+    font-weight: 700;
+    text-shadow: 0 0 10px var(--primary-glow);
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px;
+  }
+  .header .title::before {
+    content: '🔓';
+    animation: pulseGlow 1.5s ease-in-out infinite;
+  }
+  @keyframes pulseGlow {
+    0%,100% { filter: drop-shadow(0 0 4px var(--primary)); }
+    50% { filter: drop-shadow(0 0 12px var(--primary-glow)); }
+  }
+  .header .timer {
+    color: var(--danger);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: .15em;
+    animation: pulseRed 0.8s ease-in-out infinite;
+  }
+  @keyframes pulseRed {
+    0%,100% { color: var(--danger); text-shadow: 0 0 8px var(--danger); }
+    50% { color: #fff; text-shadow: 0 0 18px var(--danger); }
+  }
+
+  .prompt {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+  .prompt b { color: var(--primary); text-shadow: 0 0 6px var(--primary-glow); }
+  .prompt .warn { color: var(--danger); font-weight: 700; }
+
+  /* SUMMARY of unlocked stages */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .stage-chip {
+    background: rgba(0,0,0,.5);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .stage-chip .lbl {
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: .15em;
+    text-transform: uppercase;
+  }
+  .stage-chip .val {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--success);
+    text-shadow: 0 0 6px var(--success);
+    letter-spacing: .2em;
+    margin-top: 4px;
+  }
+  .stage-chip.empty .val { color: var(--muted); text-shadow: none; }
+
+  /* Final code input — long form, 12 char */
+  .terminal {
+    flex: 1;
+    background: rgba(0,0,0,.7);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+  }
+  .term-line {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .term-line .prefix {
+    color: var(--success);
+    margin-right: 6px;
+  }
+  .term-line .blink::after {
+    content: '▋';
+    color: var(--primary);
+    animation: blink .8s step-end infinite;
+    margin-left: 4px;
+  }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+  .final-input-wrap {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .final-input-wrap label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: .2em;
+    text-transform: uppercase;
+  }
+  .final-input {
+    width: 100%;
+    background: rgba(0,0,0,.6);
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    color: var(--primary);
+    font-family: inherit;
+    font-size: 18px;
+    letter-spacing: .35em;
+    text-align: center;
+    text-transform: uppercase;
+    outline: none;
+    text-shadow: 0 0 10px var(--primary-glow);
+    transition: all .2s;
+  }
+  .final-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(255,26,26,.3), 0 0 24px rgba(255,26,26,.5);
+  }
+  .final-input.error { border-color: var(--danger); animation: shake .4s; }
+  .final-input.success { border-color: var(--success); color: var(--success); text-shadow: 0 0 10px var(--success); }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  .feedback {
+    text-align: center;
+    font-size: 12px;
+    min-height: 18px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .feedback.error { color: var(--danger); }
+  .feedback.success { color: var(--success); text-shadow: 0 0 8px var(--success); }
+  .feedback.info { color: var(--muted); }
+
+  .actions {
+    display: flex; gap: 10px; justify-content: center;
+  }
+  .btn {
+    padding: 12px 28px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: all .2s;
+  }
+  .btn.danger {
+    background: linear-gradient(135deg, var(--primary), #C00);
+    color: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 0 16px rgba(255,26,26,.4);
+  }
+  .btn.danger:hover {
+    box-shadow: 0 0 28px rgba(255,26,26,.7);
+    transform: translateY(-1px);
+  }
+  .btn.ghost {
+    background: transparent;
+    color: var(--muted);
+  }
+  .btn.ghost:hover { color: var(--primary); border-color: var(--primary); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .meta {
+    display: flex; justify-content: space-between;
+    font-size: 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .15em;
+  }
+  .meta .left { color: var(--danger); font-weight: 700; }
+</style>
+</head>
+<body>
+  <section class="panel">
+    <div class="header">
+      <div class="title">FINAL SYSTEM RESTORE</div>
+      <div class="timer" id="timer">04:59</div>
+    </div>
+
+    <div class="prompt">
+      3개 단계의 코드를 조합하여 <b>최종 복원 키</b>를 입력하세요.
+      <span class="warn">단 1회의 입력 기회</span>만 주어집니다. 신중하게 검증 후 제출하세요.
+    </div>
+
+    <div class="summary" id="summary">
+      <div class="stage-chip" data-s="1"><div class="lbl">Stage 1</div><div class="val">----</div></div>
+      <div class="stage-chip" data-s="2"><div class="lbl">Stage 2</div><div class="val">----</div></div>
+      <div class="stage-chip" data-s="3"><div class="lbl">Stage 3</div><div class="val">----</div></div>
+    </div>
+
+    <div class="terminal">
+      <div class="term-line"><span class="prefix">root@einstein:~$</span> ./restore --final --commit</div>
+      <div class="term-line"><span class="prefix">&gt;</span> 최종 복원 키 입력 대기중<span class="blink"></span></div>
+
+      <div class="final-input-wrap">
+        <label for="finalInput">RESTORE KEY (12자리)</label>
+        <input id="finalInput" class="final-input" maxlength="12" placeholder="________ ____" autocomplete="off" spellcheck="false" />
+      </div>
+
+      <div class="feedback info" id="feedback">3개 코드를 조합하여 입력하세요</div>
+    </div>
+
+    <div class="meta">
+      <span>인증 시도: <span id="attemptCount">0</span> / 1</span>
+      <span class="left">최종 시도</span>
+    </div>
+
+    <div class="actions">
+      <button class="btn ghost" type="button" id="hintBtn">힌트 요청</button>
+      <button class="btn danger" type="button" id="restoreBtn">시스템 복원 실행</button>
+    </div>
+  </section>
+
+<script>
+(function(){
+  // ============ CONFIG ============
+  let CONFIG = {
+    correctKey: '7392-A4F1-9KQX',  // override via init
+    timerSeconds: 5 * 60,           // 5 min final phase
+    maxAttempts: 1,
+    stageCodes: { 1: null, 2: null, 3: null }
+  };
+
+  const finalInput = document.getElementById('finalInput');
+  const feedback = document.getElementById('feedback');
+  const restoreBtn = document.getElementById('restoreBtn');
+  const hintBtn = document.getElementById('hintBtn');
+  const timerEl = document.getElementById('timer');
+  const attemptCountEl = document.getElementById('attemptCount');
+  const summaryEl = document.getElementById('summary');
+
+  let attempts = 0;
+  let locked = false;
+  let timerHandle = null;
+  let secondsLeft = CONFIG.timerSeconds;
+
+  // ============ INPUT FORMATTING (xxxx-xxxx-xxxx) ============
+  finalInput.addEventListener('input', (e) => {
+    let raw = e.target.value.replace(/[^0-9A-Za-z]/g, '').toUpperCase().slice(0, 12);
+    let formatted = '';
+    for (let i = 0; i < raw.length; i++) {
+      if (i === 4 || i === 8) formatted += '-';
+      formatted += raw[i];
+    }
+    e.target.value = formatted;
+  });
+  finalInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') restore();
+  });
+
+  // ============ STAGE SUMMARY ============
+  function renderSummary() {
+    summaryEl.querySelectorAll('.stage-chip').forEach(chip => {
+      const s = chip.dataset.s;
+      const v = CONFIG.stageCodes[s];
+      const valEl = chip.querySelector('.val');
+      if (v) {
+        valEl.textContent = v;
+        chip.classList.remove('empty');
+      } else {
+        valEl.textContent = '----';
+        chip.classList.add('empty');
+      }
+    });
+  }
+
+  // ============ TIMER ============
+  function fmt(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+  }
+  function startTimer() {
+    if (timerHandle) clearInterval(timerHandle);
+    timerEl.textContent = fmt(secondsLeft);
+    timerHandle = setInterval(() => {
+      secondsLeft--;
+      timerEl.textContent = fmt(Math.max(0, secondsLeft));
+      if (secondsLeft <= 0) {
+        clearInterval(timerHandle);
+        lockout('TIMEOUT');
+      }
+    }, 1000);
+  }
+
+  // ============ RESTORE ============
+  function setStatus(state, msg) {
+    feedback.className = 'feedback ' + state;
+    feedback.textContent = msg;
+  }
+  function flashError() {
+    finalInput.classList.add('error');
+    setTimeout(() => finalInput.classList.remove('error'), 500);
+  }
+  function flashSuccess() {
+    finalInput.classList.add('success');
+  }
+
+  function restore() {
+    if (locked) return;
+    const val = finalInput.value.trim().toUpperCase();
+    if (val.replace(/-/g,'').length < 12) {
+      setStatus('error', '12자리 키를 모두 입력하세요');
+      flashError();
+      return;
+    }
+    attempts++;
+    attemptCountEl.textContent = attempts;
+
+    const ok = val === String(CONFIG.correctKey).toUpperCase();
+    if (ok) {
+      setStatus('success', '✓ 시스템 복원 완료 — 미션 성공');
+      flashSuccess();
+      locked = true;
+      restoreBtn.disabled = true;
+      hintBtn.disabled = true;
+      finalInput.disabled = true;
+      clearInterval(timerHandle);
+      postToParent({
+        type: 'restore_submit',
+        key: val,
+        success: true,
+        attempts: attempts,
+        timeLeft: secondsLeft
+      });
+    } else {
+      setStatus('error', '✗ 키 불일치 — 시스템 영구 잠금');
+      flashError();
+      postToParent({
+        type: 'restore_submit',
+        key: val,
+        success: false,
+        attempts: attempts
+      });
+      if (attempts >= CONFIG.maxAttempts) {
+        lockout('MAX_ATTEMPTS');
+      }
+    }
+  }
+
+  function lockout(reason) {
+    locked = true;
+    restoreBtn.disabled = true;
+    hintBtn.disabled = true;
+    finalInput.disabled = true;
+    setStatus('error', reason === 'TIMEOUT' ? '⏱ 시간 초과 — 미션 실패' : '🔒 인증 실패 — 시스템 영구 잠금');
+    postToParent({ type: 'lockout', reason: reason, phase: 'final' });
+  }
+
+  restoreBtn.addEventListener('click', restore);
+  hintBtn.addEventListener('click', () => {
+    postToParent({ type: 'hint_request', phase: 'final' });
+    setStatus('info', '힌트 요청 전송됨 — Einstein 응답 대기');
+  });
+
+  // ============ POSTMESSAGE BRIDGE ============
+  function postToParent(payload) {
+    try { window.parent.postMessage(payload, '*'); } catch(e) {}
+  }
+  window.addEventListener('message', (e) => {
+    const d = e.data || {};
+    if (d.type === 'init') {
+      CONFIG = Object.assign(CONFIG, d.config || {});
+      if (d.config && d.config.timerSeconds) secondsLeft = d.config.timerSeconds;
+      renderSummary();
+      if (d.startTimer !== false) startTimer();
+    } else if (d.type === 'set_stage_code' && d.stage && d.code) {
+      CONFIG.stageCodes[d.stage] = d.code;
+      renderSummary();
+    } else if (d.type === 'set_stage_codes' && d.codes) {
+      CONFIG.stageCodes = Object.assign(CONFIG.stageCodes, d.codes);
+      renderSummary();
+    } else if (d.type === 'set_correct_key' && d.key) {
+      CONFIG.correctKey = d.key;
+    } else if (d.type === 'reset') {
+      attempts = 0; locked = false;
+      restoreBtn.disabled = false; hintBtn.disabled = false; finalInput.disabled = false;
+      finalInput.value = ''; finalInput.classList.remove('error','success');
+      attemptCountEl.textContent = 0;
+      secondsLeft = CONFIG.timerSeconds;
+      setStatus('info', '재시작됨');
+      startTimer();
+    } else if (d.type === 'pause_timer') {
+      clearInterval(timerHandle);
+    } else if (d.type === 'resume_timer') {
+      startTimer();
+    }
+  });
+
+  // Init
+  renderSummary();
+  startTimer();
+  finalInput.focus();
+  postToParent({ type: 'ready', component: 'restore-input' });
+})();
+</script>
+</body>
+</html>
