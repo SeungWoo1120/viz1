@@ -30,18 +30,20 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     box-shadow: 0 0 20px rgba(0,229,255,.3);
-    padding: 14px;
+    padding: 6px 8px;
     display: flex;
-    gap: 14px;
+    gap: 8px;
+    align-items: flex-start;
   }
   /* AVATAR */
   .avatar-wrap {
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
     flex-shrink: 0;
+    justify-content: flex-start;
   }
   .avatar {
     position: relative;
-    width: 140px;
+    width: 60px;
     filter: drop-shadow(0 0 12px rgba(0,229,255,.4));
   }
   .avatar img {
@@ -54,11 +56,11 @@
   }
   .equalizer {
     display: none;
-    gap: 3px; height: 14px; align-items: end;
+    gap: 3px; height: 10px; align-items: end;
   }
   .avatar.speaking ~ .label .equalizer { display: flex; }
   .equalizer span {
-    width: 3px; background: var(--primary); border-radius: 2px;
+    width: 2px; background: var(--primary); border-radius: 2px;
     animation: eq 0.8s ease-in-out infinite;
   }
   .equalizer span:nth-child(2){ animation-delay: .1s; }
@@ -80,12 +82,12 @@
   .label .name {
     color: var(--primary);
     font-weight: 700;
-    letter-spacing: .2em;
-    font-size: 12px;
+    letter-spacing: .15em;
+    font-size: 9px;
     text-shadow: 0 0 8px var(--primary-glow);
   }
   .label .ver {
-    font-size: 9px; color: var(--muted);
+    font-size: 7px; color: var(--muted);
   }
 
   /* CHAT */
@@ -94,8 +96,8 @@
   }
   .status {
     display: flex; justify-content: space-between;
-    font-size: 10px; text-transform: uppercase; letter-spacing: .15em;
-    margin-bottom: 8px;
+    font-size: 8px; text-transform: uppercase; letter-spacing: .15em;
+    margin-bottom: 4px;
   }
   .status .live {
     color: var(--success);
@@ -111,20 +113,20 @@
 
   .messages {
     flex: 1; overflow-y: auto;
-    display: flex; flex-direction: column; gap: 6px;
-    padding-right: 6px;
-    min-height: 80px;
+    display: flex; flex-direction: column; gap: 4px;
+    padding-right: 4px;
+    min-height: 0;
     max-height: 100%;
   }
-  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar { width: 3px; }
   .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
   .msg {
-    max-width: 85%;
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-size: 13px;
-    line-height: 1.5;
+    max-width: 90%;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    line-height: 1.4;
     animation: fadeIn .3s ease;
   }
   @keyframes fadeIn {
@@ -153,11 +155,11 @@
   }
 
   .quick-replies {
-    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+    display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;
   }
   .qr-btn {
-    font-size: 11px;
-    padding: 4px 10px;
+    font-size: 9px;
+    padding: 2px 8px;
     border-radius: 999px;
     border: 1px solid rgba(0,229,255,.4);
     background: rgba(0,229,255,.1);
@@ -173,17 +175,17 @@
   }
 
   .input-row {
-    display: flex; gap: 6px; margin-top: 10px;
+    display: flex; gap: 4px; margin-top: 4px;
   }
   .input-row input {
     flex: 1;
     background: rgba(0,0,0,.4);
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px 10px;
+    border-radius: 4px;
+    padding: 4px 8px;
     color: var(--text);
     font-family: inherit;
-    font-size: 12px;
+    font-size: 10px;
     outline: none;
   }
   .input-row input:focus {
@@ -194,10 +196,10 @@
     background: var(--primary);
     color: #061A22;
     border: none;
-    padding: 8px 14px;
-    border-radius: 6px;
+    padding: 4px 10px;
+    border-radius: 4px;
     font-family: inherit;
-    font-size: 11px;
+    font-size: 9px;
     font-weight: 700;
     cursor: pointer;
     letter-spacing: .1em;
