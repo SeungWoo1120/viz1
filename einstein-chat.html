@@ -6,15 +6,15 @@
 <title>Einstein Chat — PROTOCOL REDLINE</title>
 <style>
   :root {
-    --bg: #0E0303;
-    --panel: #1A0606;
-    --primary: #FF1A1A;
-    --primary-glow: #FF4D4D;
-    --border: #5C0E0E;
-    --text: #F5C9C9;
-    --muted: #8A5454;
+    --bg: #030E14;
+    --panel: #061A22;
+    --primary: #00E5FF;
+    --primary-glow: #33EEFF;
+    --border: #0E5C68;
+    --text: #C9F5F5;
+    --muted: #548A8A;
     --success: #22C55E;
-    --secondary: #FF8A1A;
+    --secondary: #1A8AFF;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
@@ -26,14 +26,13 @@
   }
   .panel {
     width: 100%; height: 100%;
-    background: linear-gradient(180deg, rgba(26,6,6,.95), rgba(14,3,3,.95));
+    background: #061A22;
     border: 1px solid var(--border);
     border-radius: 8px;
-    box-shadow: 0 0 20px rgba(255,26,26,.3);
+    box-shadow: 0 0 20px rgba(0,229,255,.3);
     padding: 14px;
     display: flex;
     gap: 14px;
-    backdrop-filter: blur(8px);
   }
   /* AVATAR */
   .avatar-wrap {
@@ -42,41 +41,16 @@
   }
   .avatar {
     position: relative;
-    width: 110px; height: 110px;
+    width: 140px;
+    filter: drop-shadow(0 0 12px rgba(0,229,255,.4));
   }
-  .avatar .ring {
-    position: absolute; inset: 0;
-    border-radius: 50%;
-    border: 2px solid rgba(255,26,26,.4);
-    animation: spin 8s linear infinite;
+  .avatar img {
+    width: 100%;
+    height: auto;
+    display: block;
   }
-  .avatar .ring.r2 {
-    inset: -6px; border-width: 1px;
-    border-color: rgba(255,26,26,.3);
-    animation: spin 12s linear infinite reverse;
-  }
-  .avatar .core {
-    position: absolute; inset: 8px;
-    border-radius: 50%;
-    background: radial-gradient(circle, #2a0808 0%, #0a0202 70%);
-    border: 1px solid rgba(255,26,26,.5);
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden;
-    box-shadow: inset 0 0 20px rgba(255,26,26,.4), 0 0 24px rgba(255,26,26,.5);
-  }
-  .avatar .core::before {
-    content: 'E';
-    font-size: 48px; font-weight: 700;
-    color: var(--primary);
-    text-shadow: 0 0 12px var(--primary-glow);
-    font-family: 'Georgia', serif;
-    font-style: italic;
-  }
-  .avatar.speaking .pulse {
-    position: absolute; inset: 0;
-    border-radius: 50%;
-    border: 2px solid rgba(255,77,77,.6);
-    animation: spread 1.2s ease-out infinite;
+  .avatar.speaking {
+    filter: drop-shadow(0 0 20px rgba(0,229,255,.7));
   }
   .equalizer {
     display: none;
@@ -159,17 +133,17 @@
   }
   .msg.einstein {
     align-self: flex-start;
-    background: rgba(255,26,26,.12);
-    border: 1px solid rgba(255,26,26,.4);
+    background: rgba(0,229,255,.12);
+    border: 1px solid rgba(0,229,255,.4);
     border-top-left-radius: 2px;
     color: var(--text);
   }
   .msg.player {
     align-self: flex-end;
-    background: rgba(255,138,26,.15);
-    border: 1px solid rgba(255,138,26,.4);
+    background: rgba(26,138,255,.15);
+    border: 1px solid rgba(26,138,255,.4);
     border-top-right-radius: 2px;
-    color: #FFD9AC;
+    color: #CCE5FF;
   }
   .msg.typing::after {
     content: '▋';
@@ -185,17 +159,17 @@
     font-size: 11px;
     padding: 4px 10px;
     border-radius: 999px;
-    border: 1px solid rgba(255,26,26,.4);
-    background: rgba(255,26,26,.1);
+    border: 1px solid rgba(0,229,255,.4);
+    background: rgba(0,229,255,.1);
     color: var(--primary);
     cursor: pointer;
     transition: all .2s;
     font-family: inherit;
   }
   .qr-btn:hover {
-    background: rgba(255,26,26,.25);
+    background: rgba(0,229,255,.25);
     border-color: var(--primary);
-    box-shadow: 0 0 12px rgba(255,26,26,.4);
+    box-shadow: 0 0 12px rgba(0,229,255,.4);
   }
 
   .input-row {
@@ -218,7 +192,7 @@
   }
   .input-row button {
     background: var(--primary);
-    color: #fff;
+    color: #061A22;
     border: none;
     padding: 8px 14px;
     border-radius: 6px;
@@ -228,17 +202,14 @@
     cursor: pointer;
     letter-spacing: .1em;
   }
-  .input-row button:hover { background: var(--primary-glow); box-shadow: 0 0 14px rgba(255,26,26,.5); }
+  .input-row button:hover { background: var(--primary-glow); box-shadow: 0 0 14px rgba(0,229,255,.5); }
 </style>
 </head>
 <body>
   <section class="panel" aria-label="Einstein AI 대화창">
     <div class="avatar-wrap">
       <div class="avatar" id="avatar">
-        <div class="ring"></div>
-        <div class="ring r2"></div>
-        <div class="pulse"></div>
-        <div class="core"></div>
+        <img src="./cyber_einstein_nobg.png" alt="Einstein AI" />
       </div>
       <div class="label">
         <div class="name">EINSTEIN</div>
